@@ -19,12 +19,15 @@ export default function Navbar({ title, subtitle, user, onLogout }) {
 
   // Keep input in sync with URL if it changes externally
   useEffect(() => {
-    if (location.pathname === '/dashboard') {
-      const params = new URLSearchParams(location.search);
-      setSearchTerm(params.get('q') || params.get('semantic') || '');
-    } else {
-      setSearchTerm('');
-    }
+    const timer = window.setTimeout(() => {
+      if (location.pathname === '/dashboard') {
+        const params = new URLSearchParams(location.search);
+        setSearchTerm(params.get('q') || params.get('semantic') || '');
+      } else {
+        setSearchTerm('');
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [location.search, location.pathname]);
 
   // Debounced keyword search: updates `?q=` on the dashboard (500ms quiet period).
@@ -41,7 +44,7 @@ export default function Navbar({ title, subtitle, user, onLogout }) {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, navigate, location.pathname]);
+  }, [searchTerm, navigate, location.pathname, location.search]);
 
   const handleSemanticSearch = e => {
     e.preventDefault();
