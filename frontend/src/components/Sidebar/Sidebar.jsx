@@ -93,17 +93,17 @@ export default function Sidebar() {
                 src={
                   user?.avatar ||
                   `https://ui-avatars.com/api/?name=${
-                    user?.first_name || 'User'
-                  }+${user?.last_name || ''}&background=random`
+                    user?.firstName || 'User'
+                  }+${user?.lastName || ''}&background=random`
                 }
-                alt={`${user?.first_name} ${user?.last_name}`}
+                alt={`${user?.firstName} ${user?.lastName}`}
                 className={styles['sidebar__avatar-image']}
                 referrerPolicy='no-referrer'
               />
             </div>
             <div className={styles.sidebar__info}>
               <p className={styles.sidebar__name}>
-                {user?.first_name} {user?.last_name}
+                {user?.firstName} {user?.lastName}
               </p>
               <p className={styles.sidebar__role}>Learner</p>
             </div>
