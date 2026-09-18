@@ -1,29 +1,15 @@
-import { StatusCodes } from "http-status-codes";
-import { createAnswerService } from "../service/answer.service.js";
+import express from 'express';
+import { authenticateUser } from '../../../middleware/authentication.js';
+import { createAnswerController } from '../controller/answer.controller.js';
+import { createAnswerValidation } from '../validations/answer.validation.js';
+
+const router = express.Router();
 
 /**
- * POST /api/answers
- *
- * @param {import('express').Request} req - Express request.
- * @param {import('express').Response} res - Express response.
- * @param {import('express').NextFunction} next - Express next.
+ * @route POST /api/answers
+ * @desc Post an answer to a question
+ * @access Protected
  */
-export const createAnswerController = async (req, res, next) => {
-  try {
-    const { questionId, content } = req.body;
+router.post('/', authenticateUser, createAnswerValidation, createAnswerController);
 
-    const answer = await createAnswerService({
-      questionId,
-      content,
-      userId: req.user.id,
-    });
-
-    res.status(StatusCodes.CREATED).json({
-      success: true,
-      message: "Answer posted successfully",
-      data: answer,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+export default router;
