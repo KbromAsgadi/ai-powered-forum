@@ -122,4 +122,3 @@ export const loginService = async ({ email, password }) => {
     token,
   };
 };
-gi;
