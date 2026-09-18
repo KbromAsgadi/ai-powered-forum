@@ -1,7 +1,7 @@
 /**
  * Post Question: ask a new question with an optional AI draft coach.
  * The coach runs `POST /api/questions/draft-coach`, creation runs
- * `POST /api/questions` and redirects to the new thread.
+ * `POST /api/questions` and redirects to the new thread..
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
