@@ -8,18 +8,18 @@
  * crashing any process that ran it; plain fetch with a hard abort is fast,
  * memory-stable, and never leaves hung requests behind.
  */
-import { ServiceUnavailableError } from '../utils/errors/index.js';
+import { ServiceUnavailableError } from "../utils/errors/index.js";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 if (!GEMINI_API_KEY) {
-  throw new Error('GEMINI_API_KEY environment variable is required');
+  throw new Error("GEMINI_API_KEY environment variable is required");
 }
 
 export const EMBEDDING_MODEL =
-  process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
+  process.env.GEMINI_EMBEDDING_MODEL || "gemini-embedding-001";
 export const TEXT_MODEL =
-  process.env.GEMINI_TEXT_MODEL || 'gemini-3.5-flash-lite';
+  process.env.GEMINI_TEXT_MODEL || "gemini-3.5-flash-lite";
 
 /** Gemini's BatchEmbedContents accepts at most this many texts per request. */
 const EMBED_BATCH_SIZE = 100;
@@ -47,10 +47,10 @@ const GEMINI_REQUEST_TIMEOUT_MS =
 
 const GEMINI_BASE_URL =
   process.env.GEMINI_BASE_URL ||
-  'https://generativelanguage.googleapis.com/v1beta';
+  "https://generativelanguage.googleapis.com/v1beta";
 
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, Math.max(0, ms)));
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 }
 
 /**
@@ -66,12 +66,12 @@ function extractRateLimitInfo(error) {
   const inner = payload?.error;
 
   const code = inner?.code ?? error?.status;
-  const message = String(inner?.message ?? error?.message ?? '');
+  const message = String(inner?.message ?? error?.message ?? "");
   const details = Array.isArray(inner?.details) ? inner.details : [];
 
   let retryDelayMs = 0;
-  const retryInfo = details.find(detail =>
-    String(detail?.['@type']).includes('RetryInfo'),
+  const retryInfo = details.find((detail) =>
+    String(detail?.["@type"]).includes("RetryInfo"),
   );
   if (retryInfo?.retryDelay) {
     const secs = Number.parseFloat(retryInfo.retryDelay);
@@ -91,7 +91,7 @@ function extractRateLimitInfo(error) {
 
   const isRateLimited =
     code === 429 ||
-    code === 'RESOURCE_EXHAUSTED' ||
+    code === "RESOURCE_EXHAUSTED" ||
     /quota|RESOURCE_EXHAUSTED/i.test(message);
 
   return { isRateLimited, retryDelayMs };
@@ -112,8 +112,8 @@ async function geminiFetch(path, body) {
     const response = await fetch(
       `${GEMINI_BASE_URL}${path}?key=${encodeURIComponent(GEMINI_API_KEY)}`,
       {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        method: "POST",
+        headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
         signal: controller.signal,
       },
@@ -123,7 +123,8 @@ async function geminiFetch(path, body) {
 
     if (!response.ok) {
       const error = new Error(
-        payload?.error?.message || `Gemini request failed (HTTP ${response.status})`,
+        payload?.error?.message ||
+          `Gemini request failed (HTTP ${response.status})`,
       );
       error.status = response.status;
       error.payload = payload;
@@ -132,7 +133,7 @@ async function geminiFetch(path, body) {
 
     return payload;
   } catch (error) {
-    if (error?.name === 'AbortError') {
+    if (error?.name === "AbortError") {
       const timeoutError = new Error(
         `Gemini request timed out after ${GEMINI_REQUEST_TIMEOUT_MS}ms`,
       );
@@ -161,7 +162,7 @@ async function embedBatchWithRetry(inputs, taskType) {
       return await geminiFetch(
         `/models/${EMBEDDING_MODEL}:batchEmbedContents`,
         {
-          requests: inputs.map(text => ({
+          requests: inputs.map((text) => ({
             model: `models/${EMBEDDING_MODEL}`,
             content: { parts: [{ text }] },
             taskType,
@@ -197,7 +198,7 @@ async function embedBatchWithRetry(inputs, taskType) {
  *   or an array of vectors for an array input.
  * @throws {ServiceUnavailableError} When Gemini is unreachable or returns no values.
  */
-export async function embedText(text, taskType = 'RETRIEVAL_DOCUMENT') {
+export async function embedText(text, taskType = "RETRIEVAL_DOCUMENT") {
   const isArrayInput = Array.isArray(text);
   const inputs = isArrayInput ? text : [text];
 
@@ -209,7 +210,7 @@ export async function embedText(text, taskType = 'RETRIEVAL_DOCUMENT') {
       const response = await embedBatchWithRetry(batch, taskType);
 
       const batchVectors = (response.embeddings || [])
-        .map(emb => emb?.values)
+        .map((emb) => emb?.values)
         .filter(Array.isArray);
 
       if (batchVectors.length !== batch.length) {
@@ -226,7 +227,7 @@ export async function embedText(text, taskType = 'RETRIEVAL_DOCUMENT') {
     }
 
     if (vectors.length === 0) {
-      throw new Error('Gemini returned no embedding values');
+      throw new Error("Gemini returned no embedding values");
     }
 
     return isArrayInput ? vectors : vectors[0];
@@ -260,12 +261,12 @@ export async function generateText(
     const payload = await geminiFetch(`/models/${model}:generateContent`, body);
 
     const text = (payload?.candidates?.[0]?.content?.parts || [])
-      .map(part => part?.text ?? '')
-      .join('')
+      .map((part) => part?.text ?? "")
+      .join("")
       .trim();
 
     if (text.length === 0) {
-      throw new Error('Gemini returned an empty response');
+      throw new Error("Gemini returned an empty response");
     }
 
     return text;
@@ -284,7 +285,7 @@ export async function generateText(
  * @returns {Object | null} Parsed object, or null when parsing fails.
  */
 export function extractJsonFromResponse(text) {
-  if (typeof text !== 'string') return null;
+  if (typeof text !== "string") return null;
 
   try {
     return JSON.parse(text);
@@ -301,7 +302,7 @@ export function extractJsonFromResponse(text) {
     }
   }
 
-  const firstBrace = text.indexOf('{');
+  const firstBrace = text.indexOf("{");
   if (firstBrace !== -1) {
     try {
       return JSON.parse(text.slice(firstBrace));
